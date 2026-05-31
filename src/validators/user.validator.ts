@@ -2,24 +2,15 @@ import { z } from 'zod';
 import { ValidationError } from '../lib/errors.js';
 import { UserCreateInput, UserUpdateInput } from '../types/user.types.js';
 
-/* LLM_SECTION_START */
-// Entity: User
-// Fields (name: ts_type, required/optional):
-//   email: string (required)
-//   name: string (required)
-//   password: string (required) [sensitive]
-//   bio: string (optional)
-//   createdAt: Date (required)
-//   updatedAt: Date (required)
-// TODO: define Zod schemas for User create and update
-// BUSINESS RULE: Users can only read and modify their own profile — enforce self-ownership on GET/PUT/DELETE /users/:id
-// BUSINESS RULE: Email must be unique and lowercased before storage
-// BUSINESS RULE: Password must be at least 8 characters; never returned in any API response
-// FIELD DEFAULT: createdAt has @default(now()) — MUST be .optional() in createSchema
-// FIELD DEFAULT: updatedAt has @default(now()) — MUST be .optional() in createSchema
-const userCreateSchema = z.object({});
-const userUpdateSchema = z.object({});
-/* LLM_SECTION_END */
+const userCreateSchema = z.object({
+  email: z.string().email({ message: 'Please provide a valid email address' }),
+  name: z.string().min(1).max(255).trim(),
+  password: z.string().min(8).max(128),
+  bio: z.string().min(1).trim().optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+const userUpdateSchema = userCreateSchema.partial();
 
 function formatErrors(errors: z.ZodIssue[]): string {
   const seen = new Set<string>();

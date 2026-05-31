@@ -35,32 +35,17 @@ def run(ctx: TestContext) -> None:
         resp = ctx.req("POST", _create_path, token=token1, body={})
         ctx.assert_status(resp, 400, "POST /api/documents empty body → 400")
 
-# LLM_SECTION_START
-# Generate required-field validation tests for entity "Document".
-# Canonical create path: /api/documents
-# Requires authentication: True
-#
-# Required scalar fields (excluding server-injected FK fields):
-#   title: string (required)
-#   content: string (required)
-#
-# If the required fields list above is EMPTY, output only this single comment line and nothing else:
-#   # (no required fields to validate)
-#
-# Otherwise, for EACH required field, generate one test:
-#   - Omit only that field from the body
-#   - Include all other required fields with sensible values
-#   - MUST also include every secondary FK listed below in the body (they are required by the API)
-#   - Expect HTTP 400: ctx.assert_status(resp, 400, "POST document missing <field> → 400")
-#   - Wrap in `if token1:` guard
-#
-# Then generate ONE ownership spoofing test for the owner FK (if present):
-#
-# Available variables (already declared above):
-#   token1, token2
-#   user1_id, user2_id
-#   document1_id, document2_id, document3_id
-# LLM_SECTION_END    # 8-update  PUT happy path → 200
+    if token1:
+        resp = ctx.req("POST", _create_path, token=token1,
+                       body={"content": "This is test document content."})
+        ctx.assert_status(resp, 400, "POST document missing title → 400")
+
+    if token1:
+        resp = ctx.req("POST", _create_path, token=token1,
+                       body={"title": "Test Document Title"})
+        ctx.assert_status(resp, 400, "POST document missing content → 400")
+
+    # 8-update  PUT happy path → 200
     if document1_id and token1:
         _update_val: str | int = "Updated Document"
         resp = ctx.req("PUT", "/api/documents/" + str(document1_id),

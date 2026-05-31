@@ -35,36 +35,29 @@ def run(ctx: TestContext) -> None:
         resp = ctx.req("POST", _create_path, token=token1, body={})
         ctx.assert_status(resp, 400, "POST /api/users/posts empty body → 400")
 
-# LLM_SECTION_START
-# Generate required-field validation tests for entity "Post".
-# Canonical create path: /api/users/posts
-# Requires authentication: True
-#
-# Required scalar fields (excluding server-injected FK fields):
-#   title: string (required)
-#   content: string (required)
-#
-# If the required fields list above is EMPTY, output only this single comment line and nothing else:
-#   # (no required fields to validate)
-#
-# Otherwise, for EACH required field, generate one test:
-#   - Omit only that field from the body
-#   - Include all other required fields with sensible values
-#   - MUST also include every secondary FK listed below in the body (they are required by the API)
-#   - Expect HTTP 400: ctx.assert_status(resp, 400, "POST post missing <field> → 400")
-#   - Wrap in `if token1:` guard
-#
-# Then generate ONE ownership spoofing test for the owner FK (if present):
-#   - Include "authorId": <user2_id> in the body while using token1
-#   - If response is 201 and data.get("authorId") == user1_id: ctx.ok("spoofing prevented")
-#   - If response is 201 and data.get("authorId") == user2_id: ctx.warn("SECURITY: ownership spoofing succeeded")
-#   - Store the created entity id in ctx.state["spoofed_post_id"] for cleanup
-#
-# Available variables (already declared above):
-#   token1, token2
-#   user1_id, user2_id
-#   post1_id, post2_id, post3_id
-# LLM_SECTION_END    # 11-update  PUT happy path → 200
+    if token1:
+        resp = ctx.req("POST", _create_path, token=token1,
+                       body={"content": "This is test content for a blog post."})
+        ctx.assert_status(resp, 400, "POST post missing title → 400")
+
+    if token1:
+        resp = ctx.req("POST", _create_path, token=token1,
+                       body={"title": "Test Post Title"})
+        ctx.assert_status(resp, 400, "POST post missing content → 400")
+
+    if token1:
+        resp = ctx.req("POST", _create_path, token=token1,
+                       body={"title": "Spoof Test", "content": "Spoofing content here.",
+                             "authorId": user2_id})
+        data = ctx.safe_json(resp)
+        if resp.status_code == 201 and data.get("authorId") == user1_id:
+            ctx.ok("ownership spoofing prevented — authorId correctly overridden")
+        elif resp.status_code == 201 and data.get("authorId") == user2_id:
+            ctx.warn("SECURITY: ownership spoofing succeeded — authorId accepted from body")
+        if resp.status_code == 201:
+            ctx.state["spoofed_post_id"] = data.get("id")
+
+    # 11-update  PUT happy path → 200
     if post1_id and token1:
         _update_val: str | int = "Updated Post"
         resp = ctx.req("PUT", "/api/posts/" + str(post1_id),

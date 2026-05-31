@@ -35,35 +35,22 @@ def run(ctx: TestContext) -> None:
         resp = ctx.req("POST", _create_path, token=token1, body={})
         ctx.assert_status(resp, 400, "POST /api/posts/:id/comments empty body → 400")
 
-# LLM_SECTION_START
-# Generate required-field validation tests for entity "Comment".
-# Canonical create path: /api/posts/:id/comments
-# Requires authentication: True
-#
-# Required scalar fields (excluding server-injected FK fields):
-#   body: string (required)
-#
-# If the required fields list above is EMPTY, output only this single comment line and nothing else:
-#   # (no required fields to validate)
-#
-# Otherwise, for EACH required field, generate one test:
-#   - Omit only that field from the body
-#   - Include all other required fields with sensible values
-#   - MUST also include every secondary FK listed below in the body (they are required by the API)
-#   - Expect HTTP 400: ctx.assert_status(resp, 400, "POST comment missing <field> → 400")
-#   - Wrap in `if token1:` guard
-#
-# Then generate ONE ownership spoofing test for the owner FK (if present):
-#   - Include "authorId": <user2_id> in the body while using token1
-#   - If response is 201 and data.get("authorId") == user1_id: ctx.ok("spoofing prevented")
-#   - If response is 201 and data.get("authorId") == user2_id: ctx.warn("SECURITY: ownership spoofing succeeded")
-#   - Store the created entity id in ctx.state["spoofed_comment_id"] for cleanup
-#
-# Available variables (already declared above):
-#   token1, token2
-#   user1_id, user2_id
-#   comment1_id, comment2_id, comment3_id
-# LLM_SECTION_END    # 14-update  PUT happy path → 200
+    if token1:
+        resp = ctx.req("POST", _create_path, token=token1, body={})
+        ctx.assert_status(resp, 400, "POST comment missing body → 400")
+
+    if token1:
+        resp = ctx.req("POST", _create_path, token=token1,
+                       body={"body": "Ownership spoof test comment.", "authorId": user2_id})
+        data = ctx.safe_json(resp)
+        if resp.status_code == 201 and data.get("authorId") == user1_id:
+            ctx.ok("ownership spoofing prevented — authorId correctly overridden")
+        elif resp.status_code == 201 and data.get("authorId") == user2_id:
+            ctx.warn("SECURITY: ownership spoofing succeeded — authorId accepted from body")
+        if resp.status_code == 201:
+            ctx.state["spoofed_comment_id"] = data.get("id")
+
+    # 14-update  PUT happy path → 200
     if comment1_id and token1:
         _update_val: str | int = "Updated Comment"
         resp = ctx.req("PUT", "/api/comments/" + str(comment1_id),
