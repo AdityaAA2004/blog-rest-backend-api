@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+package-lock.json
+**/package-lock.json
+
+# Python cache
+__pycache__/
+**/__pycache__/
+
+# Build output
+dist/
+
+# Environment — never commit secrets
+.env
+
+# TypeScript build info
+*.tsbuildinfo
+*.js.map
+
+# Deployment state
+.developable/
+
+# Terraform — provider cache and sensitive variable files
+.terraform/
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfvars.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Prisma generated client (regenerated on install)
+prisma/generated/

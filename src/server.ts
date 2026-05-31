@@ -1,0 +1,29 @@
+import 'dotenv/config';
+import crypto from 'crypto';
+import app from './app.js';
+
+// Auto-generate JWT_SECRET if not provided in environment.
+// For production, set a persistent JWT_SECRET in your .env file.
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
+  console.warn(
+    '[SECURITY] JWT_SECRET is not set. An ephemeral secret was auto-generated for this session.\n' +
+    '           Tokens will be invalidated on every restart. Add JWT_SECRET to your .env file.',
+  );
+}
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] Unhandled promise rejection:', reason);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught exception:', err);
+  process.exit(1);
+});
+
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
