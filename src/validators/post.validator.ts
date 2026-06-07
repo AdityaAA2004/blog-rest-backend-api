@@ -2,25 +2,14 @@ import { z } from 'zod';
 import { ValidationError } from '../lib/errors.js';
 import { PostCreateInput, PostUpdateInput } from '../types/post.types.js';
 
-/* LLM_SECTION_START */
-// Entity: Post
-// Fields (name: ts_type, required/optional):
-//   title: string (required)
-//   content: string (required)
-//   published: boolean (required)
-//   authorId: number (required)
-//   createdAt: Date (required)
-//   updatedAt: Date (required)
-// TODO: define Zod schemas for Post create and update
-// SERVER-INJECTED (always): authorId is set from req.user.id — exclude from ALL schemas
-// BUSINESS RULE: Only the author can edit or delete a post
-// BUSINESS RULE: Title must be non-empty and trimmed; content must be at least 10 characters
-// FIELD DEFAULT: published has @default(false) — MUST be .optional() in createSchema
-// FIELD DEFAULT: createdAt has @default(now()) — MUST be .optional() in createSchema
-// FIELD DEFAULT: updatedAt has @default(now()) — MUST be .optional() in createSchema
-const postCreateSchema = z.object({});
-const postUpdateSchema = z.object({});
-/* LLM_SECTION_END */
+const postCreateSchema = z.object({
+  title: z.string().min(1).max(255).trim(),
+  content: z.string().min(10).max(10000),
+  published: z.boolean().optional(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+const postUpdateSchema = postCreateSchema.partial();
 
 function formatErrors(errors: z.ZodIssue[]): string {
   const seen = new Set<string>();

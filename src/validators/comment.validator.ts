@@ -2,26 +2,18 @@ import { z } from 'zod';
 import { ValidationError } from '../lib/errors.js';
 import { CommentCreateInput, CommentUpdateInput } from '../types/comment.types.js';
 
-/* LLM_SECTION_START */
-// Entity: Comment
-// Fields (name: ts_type, required/optional):
-//   body: string (required)
-//   authorId: number (required)
-//   postId: number (required)
-//   createdAt: Date (required)
-//   updatedAt: Date (required)
-// TODO: define Zod schemas for Comment create and update
-// SERVER-INJECTED (always): authorId is set from req.user.id — exclude from ALL schemas
-// PARENT-FK: postId is required in the request body for direct POST /comments,
-//            but injected from URL params in nested routes — exclude it from commentCreateNestedSchema
-// BUSINESS RULE: Comments belong to both an author (User) and a post (Post)
-// BUSINESS RULE: Body must be non-empty; no maximum length restriction for comments
-// FIELD DEFAULT: createdAt has @default(now()) — MUST be .optional() in createSchema
-// FIELD DEFAULT: updatedAt has @default(now()) — MUST be .optional() in createSchema
-const commentCreateSchema = z.object({});
-const commentCreateNestedSchema = z.object({});
-const commentUpdateSchema = z.object({});
-/* LLM_SECTION_END */
+const commentCreateSchema = z.object({
+  body: z.string().min(1),
+  postId: z.number().int(),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+const commentCreateNestedSchema = z.object({
+  body: z.string().min(1),
+  createdAt: z.coerce.date().optional(),
+  updatedAt: z.coerce.date().optional(),
+});
+const commentUpdateSchema = commentCreateSchema.partial();
 
 function formatErrors(errors: z.ZodIssue[]): string {
   const seen = new Set<string>();

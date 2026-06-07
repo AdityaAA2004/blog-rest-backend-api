@@ -2,17 +2,12 @@ import { z } from 'zod';
 import { ValidationError } from '../lib/errors.js';
 import { DocumentCreateInput, DocumentUpdateInput } from '../types/document.types.js';
 
-/* LLM_SECTION_START */
-// Entity: Document
-// Fields (name: ts_type, required/optional):
-//   title: string (required)
-//   content: string (required)
-//   createdAt: Date (required)
-// TODO: define Zod schemas for Document create and update
-// FIELD DEFAULT: createdAt has @default(now()) — MUST be .optional() in createSchema
-const documentCreateSchema = z.object({});
-const documentUpdateSchema = z.object({});
-/* LLM_SECTION_END */
+const documentCreateSchema = z.object({
+  title: z.string().min(1).max(255).trim(),
+  content: z.string().min(1).max(10000),
+  createdAt: z.coerce.date().optional(),
+});
+const documentUpdateSchema = documentCreateSchema.partial();
 
 function formatErrors(errors: z.ZodIssue[]): string {
   const seen = new Set<string>();
